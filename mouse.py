@@ -6,7 +6,7 @@ from pynput.mouse import Button, Controller
 mouse = Controller()
 
 # Replace 'COM3' with your Arduino's port (e.g., '/dev/ttyUSB0' for Linux/Mac)
-arduino_port = 'COM3'
+arduino_port = 'COM5'
 baud_rate = 9600
 
 # Connect to Arduino
@@ -30,28 +30,41 @@ def process_data(data):
 # Main loop
 def main():
     print("Mouse control script running. Press Ctrl+C to exit.")
+
+    # Track previous button states
+    prev_left_click = False
+    prev_right_click = False
+
     while True:
         if arduino.in_waiting > 0:
             data = arduino.readline().decode('utf-8').strip()
             processed = process_data(data)
-            
+
             if processed:
                 x, y, left_click, right_click = processed
 
                 # Move the mouse
                 mouse.move(x, -y)  # Invert Y-axis for natural movement
-                
-                # Handle left click
-                if left_click:
-                    mouse.press(Button.left)
-                else:
-                    mouse.release(Button.left)
-                
-                # Handle right click
-                if right_click:
+
+                # Handle left click (allow holding, prevent unwanted clicks)
+                if left_click and not prev_left_click:
+                    mouse.press(Button.left)  # Press only once when first held
+                    print("Left button pressed")
+                elif not left_click and prev_left_click:
+                    mouse.release(Button.left)  # Release only when let go
+                    print("Left button released")
+
+                # Handle right click (same logic)
+                if right_click and not prev_right_click:
                     mouse.press(Button.right)
-                else:
+                    print("Right button pressed")
+                elif not right_click and prev_right_click:
                     mouse.release(Button.right)
+                    print("Right button released")
+
+                # Store previous button states
+                prev_left_click = left_click
+                prev_right_click = right_click
 
 if __name__ == "__main__":
     try:
