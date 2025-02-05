@@ -53,20 +53,19 @@ void loop() {
     delay(10); // Reduce data flood
 }
 
-// **Fixed Debounce Function**
 bool debounce(int pin, bool* state, int index) {
-    static unsigned long lastPressTime[2] = {0, 0};  // Array size matches number of buttons
+    static unsigned long lastPressTime[2] = {0, 0};  // Track button states
     const unsigned long debounceDelay = 50; // 50ms debounce time
 
-    bool reading = digitalRead(pin) == LOW; // Button is active LOW
+    bool reading = digitalRead(pin) == LOW; // Active LOW button
 
-    if (reading != *state) {  // State change detected
+    if (reading != *state) {  // Only act when state changes
         unsigned long currentTime = millis();
         if (currentTime - lastPressTime[index] > debounceDelay) {
-            lastPressTime[index] = currentTime;  // Update last press time
-            *state = reading;  // Update stored state
+            lastPressTime[index] = currentTime;  // Update timestamp
+            *state = reading;  // Update state
         }
     }
 
-    return *state; // Return stable state
+    return *state; // Return button state (true when held)
 }
