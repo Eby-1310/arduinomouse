@@ -6,24 +6,23 @@ from pynput.mouse import Button, Controller
 mouse = Controller()
 
 # Replace 'COM3' with your Arduino's port (e.g., '/dev/ttyUSB0' for Linux/Mac)
-arduino_port = 'COM5'
-baud_rate = 9600
+port = 'COM5'
+rate = 9600
 
 # Connect to Arduino
 try:
-    arduino = serial.Serial(arduino_port, baud_rate, timeout=0.1)
-    time.sleep(2)  # Allow time for the Arduino to reset
-    print(f"Connected to Arduino on {arduino_port}")
+    arduino = serial.Serial(port, rate, timeout=0.1)
+    time.sleep(2)
+    print(f"Connected to Arduino on {port}")
 except serial.SerialException:
-    print(f"Failed to connect to Arduino on {arduino_port}")
+    print(f"Failed to connect to Arduino on {port}")
     exit()
 
 # Function to process incoming data
-def process_data(data):
+def dataMap(data):
     try:
-        # Parse incoming data (format: x,y,leftClick,rightClick)
-        x, y, left_click, right_click = map(int, data.strip().split(","))
-        return x, y, left_click, right_click
+        x, y, leftC, rightC = map(int, data.strip().split(","))
+        return x, y, leftC, rightC
     except ValueError:
         return None
 
@@ -32,39 +31,38 @@ def main():
     print("Mouse control script running. Press Ctrl+C to exit.")
 
     # Track previous button states
-    prev_left_click = False
-    prev_right_click = False
+    leftCState = False
+    rightCState = False
 
     while True:
         if arduino.in_waiting > 0:
             data = arduino.readline().decode('utf-8').strip()
-            processed = process_data(data)
+            mapped = dataMap(data)
 
-            if processed:
-                x, y, left_click, right_click = processed
+            if mapped:
+                x, y, leftC, rightC = mapped
 
-                # Move the mouse
-                mouse.move(x, -y)  # Invert Y-axis for natural movement
+                mouse.move(x, -y)
 
-                # Handle left click (allow holding, prevent unwanted clicks)
-                if left_click and not prev_left_click:
-                    mouse.press(Button.left)  # Press only once when first held
+                
+                if leftC and not leftCState:
+                    mouse.press(Button.left)
                     print("Left button pressed")
-                elif not left_click and prev_left_click:
-                    mouse.release(Button.left)  # Release only when let go
+                elif not leftC and leftCState:
+                    mouse.release(Button.left)  
                     print("Left button released")
 
-                # Handle right click (same logic)
-                if right_click and not prev_right_click:
+                
+                if rightC and not rightCState:
                     mouse.press(Button.right)
                     print("Right button pressed")
-                elif not right_click and prev_right_click:
+                elif not rightC and rightCState:
                     mouse.release(Button.right)
                     print("Right button released")
 
                 # Store previous button states
-                prev_left_click = left_click
-                prev_right_click = right_click
+                leftCState = leftC
+                rightCState = rightC
 
 if __name__ == "__main__":
     try:
@@ -75,3 +73,4 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"An error occurred: {e}")
         arduino.close()
+        
